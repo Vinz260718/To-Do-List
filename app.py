@@ -30,24 +30,27 @@ def webhook():
         if callback_data.startswith('completed'):
             task = callback_data.split('|')[1]
             send_message(chat_id, f'✅ Tugas "{task}" telah diselesaikan!')
-            remove_task(task)  # Hapus tugas setelah selesai
+            # Hapus tugas yang telah diselesaikan
+            global tasks
+            tasks = [t for t in tasks if t['text'] != task]
         elif callback_data.startswith('delay'):
             task = callback_data.split('|')[1]
             time_str = callback_data.split('|')[2]
             send_message(chat_id, f'⏳ Tugas "{task}" dijadwalkan ulang 10 menit lagi.')
             # Menjadwalkan ulang pengingat dalam 10 menit
-            time.sleep(600)  # Simulasikan delay 10 detik (ganti dengan 600 untuk 10 menit)
+            time.sleep(600)  # Simulasikan delay 600 detik (10 menit)
             send_reminder(chat_id, task, time_str)
     
-    return '', 200
+    elif 'text' in data['message']:
+        text = data['message']['text']
+        chat_id = data['message']['chat']['id']
+        
+        if text == '/list':
+            # Menampilkan daftar tugas yang sedang berjalan
+            list_tasks_response = list_tasks()
+            send_message(chat_id, list_tasks_response)
 
-@app.route('/list', methods=['GET'])
-def list_tasks():
-    if len(tasks) == 0:
-        return "🔔 Tidak ada tugas yang sedang berjalan."
-    
-    task_list = "\n".join([f"**{task['text']}** - {task['time']}" for task in tasks])
-    return f"🔔 Daftar Tugas yang sedang berjalan:\n\n{task_list}"
+    return '', 200
 
 def send_reminder(chat_id, task, time_str):
     emoji = get_emoji(task)
@@ -81,14 +84,19 @@ def get_emoji(text):
         return '📚'
     return '🔔'
 
+def list_tasks():
+    if len(tasks) == 0:
+        return "🔔 Tidak ada tugas yang sedang berjalan."
+    
+    task_list = "\n".join([f"**{task['text']}** - {task['time']}" for task in tasks])
+    return f"🔔 Daftar Tugas yang sedang berjalan:\n\n{task_list}"
+
+# Fungsi untuk menambahkan tugas
 def add_task(text, time_str):
     task = {"text": text, "time": time_str}
     tasks.append(task)  # Menambahkan task ke list tasks
+    print(f"Tugas ditambahkan: {task}")  # Log tugas yang ditambahkan
     return task
-
-def remove_task(task_text):
-    global tasks
-    tasks = [task for task in tasks if task['text'] != task_text]  # Hapus tugas yang sudah diselesaikan
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
