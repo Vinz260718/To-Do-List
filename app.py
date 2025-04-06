@@ -114,6 +114,7 @@ def webhook():
             task = callback_data.split('|')[1]
             complete_task_in_db(task)
             send_message(chat_id, f'✅ Tugas "{task}" telah diselesaikan!')
+        
         elif callback_data.startswith('delay'):
             task = callback_data.split('|')[1]
             time_str = callback_data.split('|')[2]
