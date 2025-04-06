@@ -27,6 +27,7 @@ def get_pending_tasks():
     
     cursor.execute('''SELECT task, time FROM tasks WHERE status = 'pending' ''')
     tasks = cursor.fetchall()
+    print(f"Tasks from DB: {tasks}")  # Debugging log
     
     conn.close()
     return tasks

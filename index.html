@@ -23,93 +23,25 @@
     <ul id="taskList" class="space-y-2"></ul>
   </div>
 
-  <script>
-    const taskInput = document.getElementById('taskInput');
-    const timeInput = document.getElementById('timeInput');
-    const taskList = document.getElementById('taskList');
-  
-    const token = '8144985039:AAHEP1y_NYto3JQlF-eHtWvS9u5xkbidHgU';  // Ganti dengan API token bot kamu
-    const chatId = '-4729990239';  // Ganti dengan chat ID kamu
-  
-    // Fungsi untuk memuat tugas dari localStorage
-    function loadTasks() {
-      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      tasks.forEach(task => {
-        const li = document.createElement('li');
-        li.className = 'flex items-center justify-between bg-gray-700 p-3 rounded-xl shadow-sm';
-  
-        li.innerHTML = `
-          <div class="flex gap-4 w-full">
-              <span class="text-gray-100 flex-grow">${task.text}</span>
-              <span class="text-gray-400 text-center w-24">${task.time}</span>
-          </div>
-          <div class="flex space-x-2">
-          <button onclick="completeTask(this)" class="text-green-400 hover:text-green-500 transition">✅</button>
-          <button onclick="editTask(this)" class="text-yellow-400 hover:text-yellow-500 transition">✏️</button>
-          <button onclick="deleteTask(this)" class="text-red-400 hover:text-red-500 transition">🗑️</button>
-          </div>
-        `;
-  
-        taskList.appendChild(li);
-      });
-    }
-  
-    function sendReminderToTelegram(taskText, taskTime) {
-        let emoji = '🔔';
-        if (taskText.toLowerCase().includes('workout')) emoji = '💪';
-        else if (taskText.toLowerCase().includes('meeting')) emoji = '📅';
-        else if (taskText.toLowerCase().includes('study')) emoji = '📚';
-  
-        const message = `
-    *📌 Pengingat Tugas* ${emoji}
-  
-    **Tugas:** ${taskText}
-    **Waktu:** ${taskTime}
-  
-    Jangan lupa untuk menyelesaikannya! 🚀
-    `;
-  
-        const payload = {
-            chat_id: chatId,
-            text: message,
-            parse_mode: "Markdown",
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        { text: "✅ COMPLETED!", callback_data: `completed|${taskText}` },
-                        { text: "⏰ JEDA 10 MENIT!", callback_data: `delay|${taskText}|${taskTime}` }
-                    ]
-                ]
-            }
-        };
-  
-        fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log("Pesan dikirim:", data);
-        })
-        .catch(err => console.error("Gagal kirim:", err));
-    }
-  
-    function addTask() {
-      const text = taskInput.value.trim();
-      const time = timeInput.value.trim();
-      if (!text || !time) return;
-  
-      const task = { text, time };
-  
-      // Tambahkan task ke tampilan
+<script>
+  const taskInput = document.getElementById('taskInput');
+  const timeInput = document.getElementById('timeInput');
+  const taskList = document.getElementById('taskList');
+
+  const token = '8144985039:AAHEP1y_NYto3JQlF-eHtWvS9u5xkbidHgU';  // Ganti dengan API token bot kamu
+  const chatId = '-4729990239';  // Ganti dengan chat ID kamu
+
+  // Fungsi untuk memuat tugas dari localStorage
+  function loadTasks() {
+    const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    tasks.forEach(task => {
       const li = document.createElement('li');
       li.className = 'flex items-center justify-between bg-gray-700 p-3 rounded-xl shadow-sm';
-  
+
       li.innerHTML = `
         <div class="flex gap-4 w-full">
-            <span class="text-gray-100 flex-grow">${text}</span>
-            <span class="text-gray-400 text-center w-24">${time}</span>
+            <span class="text-gray-100 flex-grow">${task.text}</span>
+            <span class="text-gray-400 text-center w-24">${task.time}</span>
         </div>
         <div class="flex space-x-2">
         <button onclick="completeTask(this)" class="text-green-400 hover:text-green-500 transition">✅</button>
@@ -117,69 +49,138 @@
         <button onclick="deleteTask(this)" class="text-red-400 hover:text-red-500 transition">🗑️</button>
         </div>
       `;
-  
+
       taskList.appendChild(li);
-      taskInput.value = '';
-      timeInput.value = '';
-  
-      // Simpan task ke localStorage
-      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      tasks.push(task);
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-  
-      // Set pengingat pada waktu yang ditentukan
-      const taskTime = time;
-      setTimeout(() => {
-          sendReminderToTelegram(text, taskTime);
-      }, calculateTimeDelay(taskTime));  // Kalkulasi delay berdasarkan waktu pengingat
-    }
-  
-    function deleteTask(btn) {
-      const li = btn.closest('li');
-      const text = li.querySelector('span').textContent;
-      const time = li.querySelectorAll('span')[1].textContent;
-  
-      // Hapus task dari localStorage
-      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      tasks = tasks.filter(task => task.text !== text || task.time !== time);
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-  
-      li.remove();
-    }
-  
-    function completeTask(btn) {
-      const textSpan = btn.closest('li').querySelector('span');
-      textSpan.classList.toggle('line-through');
-      textSpan.classList.toggle('text-gray-500');
-    }
-  
-    function editTask(btn) {
-      const li = btn.closest('li');
-      const textSpan = li.querySelector('span');
-      const timeSpan = li.querySelectorAll('span')[1];
-      const currentText = textSpan.textContent;
-      const currentTime = timeSpan.textContent;
-  
-      taskInput.value = currentText;
-      timeInput.value = currentTime;
-      li.remove(); // Hapus task lama sebelum melakukan edit
-  
-      // Setelah edit, kita akan otomatis update task baru setelah menekan tombol tambah lagi
-    }
-  
-    function calculateTimeDelay(taskTime) {
-      const now = new Date();
-      const targetTime = new Date();
-      const [hours, minutes] = taskTime.split(':');
-      targetTime.setHours(hours);
-      targetTime.setMinutes(minutes);
-      targetTime.setSeconds(0);
-  
-      return targetTime.getTime() - now.getTime();
-    }
-  
-    // Memuat tugas yang ada dari localStorage saat halaman dimuat
-    window.onload = loadTasks;
-  </script>  
+    });
+  }
+
+  function sendReminderToTelegram(taskText, taskTime) {
+      let emoji = '🔔';
+      if (taskText.toLowerCase().includes('workout')) emoji = '💪';
+      else if (taskText.toLowerCase().includes('meeting')) emoji = '📅';
+      else if (taskText.toLowerCase().includes('study')) emoji = '📚';
+
+      const message = `
+  *📌 Pengingat Tugas* ${emoji}
+
+  **Tugas:** ${taskText}
+  **Waktu:** ${taskTime}
+
+  Jangan lupa untuk menyelesaikannya! 🚀
+  `;
+
+      const payload = {
+          chat_id: chatId,
+          text: message,
+          parse_mode: "Markdown",
+          reply_markup: {
+              inline_keyboard: [
+                  [
+                      { text: "✅ COMPLETED!", callback_data: `completed|${taskText}` },
+                      { text: "⏰ JEDA 10 MENIT!", callback_data: `delay|${taskText}|${taskTime}` }
+                  ]
+              ]
+          }
+      };
+
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+          console.log("Pesan dikirim:", data);
+      })
+      .catch(err => console.error("Gagal kirim:", err));
+  }
+
+  function addTask() {
+    const text = taskInput.value.trim();
+    const time = timeInput.value.trim();
+    if (!text || !time) return;
+
+    const task = { text, time };
+
+    // Tambahkan task ke tampilan
+    const li = document.createElement('li');
+    li.className = 'flex items-center justify-between bg-gray-700 p-3 rounded-xl shadow-sm';
+
+    li.innerHTML = `
+      <div class="flex gap-4 w-full">
+          <span class="text-gray-100 flex-grow">${text}</span>
+          <span class="text-gray-400 text-center w-24">${time}</span>
+      </div>
+      <div class="flex space-x-2">
+      <button onclick="completeTask(this)" class="text-green-400 hover:text-green-500 transition">✅</button>
+      <button onclick="editTask(this)" class="text-yellow-400 hover:text-yellow-500 transition">✏️</button>
+      <button onclick="deleteTask(this)" class="text-red-400 hover:text-red-500 transition">🗑️</button>
+      </div>
+    `;
+
+    taskList.appendChild(li);
+    taskInput.value = '';
+    timeInput.value = '';
+
+    // Simpan task ke localStorage
+    const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    tasks.push(task);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+
+    // Set pengingat pada waktu yang ditentukan
+    const taskTime = time;
+    setTimeout(() => {
+        sendReminderToTelegram(text, taskTime);
+    }, calculateTimeDelay(taskTime));  // Kalkulasi delay berdasarkan waktu pengingat
+  }
+
+  function deleteTask(btn) {
+    const li = btn.closest('li');
+    const text = li.querySelector('span').textContent;
+    const time = li.querySelectorAll('span')[1].textContent;
+
+    // Hapus task dari localStorage
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    tasks = tasks.filter(task => task.text !== text || task.time !== time);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+
+    li.remove();
+  }
+
+  function completeTask(btn) {
+    const textSpan = btn.closest('li').querySelector('span');
+    textSpan.classList.toggle('line-through');
+    textSpan.classList.toggle('text-gray-500');
+  }
+
+  function editTask(btn) {
+    const li = btn.closest('li');
+    const textSpan = li.querySelector('span');
+    const timeSpan = li.querySelectorAll('span')[1];
+    const currentText = textSpan.textContent;
+    const currentTime = timeSpan.textContent;
+
+    taskInput.value = currentText;
+    timeInput.value = currentTime;
+    li.remove(); // Hapus task lama sebelum melakukan edit
+
+    // Setelah edit, kita akan otomatis update task baru setelah menekan tombol tambah lagi
+  }
+
+  function calculateTimeDelay(taskTime) {
+    const now = new Date();
+    const targetTime = new Date();
+    const [hours, minutes] = taskTime.split(':');
+    targetTime.setHours(hours);
+    targetTime.setMinutes(minutes);
+    targetTime.setSeconds(0);
+
+    return targetTime.getTime() - now.getTime();
+  }
+
+  // Memuat tugas yang ada dari localStorage saat halaman dimuat
+  window.onload = loadTasks;
+</script>
+
 </body>
 </html>
